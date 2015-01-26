@@ -1,0 +1,6 @@
+* Intro
+This software package implements the ideas found in [[http://www.cs.cornell.edu/projects/light_compositing/][this]] article.
+
+* Required software
+- Python 2
+- OpenCV
