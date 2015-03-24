@@ -1,0 +1,2 @@
+This directory contains some experiments doing pixelwise calculations.
+This is way to slow, but was used as a proof of concept befor implementing the calculations doing numpy.
