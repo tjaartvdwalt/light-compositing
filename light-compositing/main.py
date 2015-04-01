@@ -2,12 +2,12 @@
 import cv2
 import image_utils as utils
 import basis_lights
-
+N = 6
 
 def main():
     img_list = []
-    for i in range(0, 10):
-        img_name = "test_data/%03d.png" % (i)
+    for i in range(0, N):
+        img_name = "test_data/cafe/%03d.png" % (i)
         img = cv2.imread(img_name)
 
         # Normalize images to range [0..1] so that we can more easily
