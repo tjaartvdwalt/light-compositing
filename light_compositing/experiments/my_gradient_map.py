@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 def orientation_map(mag, ori, threshold=0.01):
     # print(mag.shape)
-    return_image = np.zeros(mag.shape, np.float32)
+    return_image = np.zeros_like(mag)
     rows = mag.shape[0]
     cols = mag.shape[1]
     # channels = mag.shape[2]
@@ -22,7 +22,7 @@ def orientation_map(mag, ori, threshold=0.01):
 
 
 def calculate_gradient_histograms(gradient_maps):
-    return_map = np.zeros(gradient_maps[0].shape, np.float32)
+    return_map = np.zeros_like(gradient_maps[0])
     shape = gradient_maps[0].shape
     rows = shape[0]
     cols = shape[1]
@@ -30,11 +30,11 @@ def calculate_gradient_histograms(gradient_maps):
     for r in range(rows):
         for c in range(cols):
             i = 0
-            pixel_at_images = np.zeros((len(gradient_maps)), np.float32)
+            pixel_at_images = np.zeros_like(gradient_maps[0])
             for im in gradient_maps:
                 pixel_at_images.itemset(i, im.item(r, c))
                 i += 1
-            hist = cv2.calcHist([pixel_at_images], [0], None, [72], [0, 360])
+            hist = cv2.calcHist([pixel_at_images], [0], None, [36], [0, 180])
 
             max = 0
             i = 0
@@ -82,13 +82,15 @@ def gradient_map(images):
 
         # cv2.imshow('image', ori)
         # cv2.waitKey(0)
-
-        ori_map = orientation_map(mag, ori)
-        # norm_ori = ori / 360.0
-        # norm_ori = ori * 255
-        gradient_maps.append(ori_map)
-        # print(ori_map)
-        # cv2.imshow('image', ori_map)
+        cv2.imshow('orientation', ori)
+        cv2.waitKey(0)
+        # cv2.imshow('magnitude', mag)
         # cv2.waitKey(0)
+
+        # ori_map = orientation_map(mag, ori)
+        # # norm_ori = ori / 360.0
+        # # norm_ori = ori * 255
+        gradient_maps.append(ori)
+        # # print(ori_map)
 
     return calculate_gradient_histograms(gradient_maps)

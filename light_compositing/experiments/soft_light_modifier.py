@@ -8,7 +8,7 @@ sys.path.append("..")
 import image_utils as utils
 
 img_list = []
-N = 10
+N = 15
 
 
 def get_mixture_coefficients(sigma=0.5):
@@ -17,7 +17,7 @@ def get_mixture_coefficients(sigma=0.5):
     # print val
     # print i_coef
     s = S(sigma)
-    # print s
+    print s
     s_times_lambda = np.dot(np.matrix(s), i_coef)
     # print np.matrixmultiply(np.matrix(s), i_coef)
     # for i in range(10):
@@ -30,6 +30,7 @@ def get_mixture_coefficients(sigma=0.5):
 
 def S(sigma):
     soft_lambda = np.ones((N, N), dtype="float32")
+    print sigma
     for i in range(N):
         for j in range(N):
             soft_lambda.itemset(i, j, element_s(img_list[i],
@@ -40,7 +41,7 @@ def S(sigma):
 def element_s(i, j, sigma):
     # print i - j
     # print j
-    return np.exp(-np.linalg.norm(i - j)**2/2 * sigma**2)
+    return np.exp(-(np.linalg.norm(i - j)**2)/(2 * (sigma**2)))
 
 
 def sum_lambda_int(l):
@@ -59,22 +60,23 @@ def main():
     # px1 = np.array([0, 126, 255], dtype=float)
     # px2 = np.array([0, 0, 0], dtype=float)
     for i in range(0, N):
-        img_name = "../../../input_image/basket/images/%03d.png" % (i)
+        img_name = "../test_data/basket/%03d.png" % (i)
+        print(img_name)
         img = cv2.imread(img_name)
         # img_list.append(utils.normalize(img))
         img_list.append(img)
 
-    coef = get_mixture_coefficients(sigma=100000000000)
+    coef = get_mixture_coefficients(sigma=10)
 
     soft_light_img = sum_lambda_int(coef)
 
     hsv_image = cv2.cvtColor(soft_light_img, cv2.cv.CV_BGR2HSV)
 
     for i in range(hsv_image.shape[0]):
-        hsv_image[i][:, 2] = hsv_image[i][:, 2] + 5
+        hsv_image[i][:, 2] = hsv_image[i][:, 2] + 6
 
     # hsv_image = np.clip(hsv_image[:, 2], 0.0, 1.0)
-    print hsv_image[:, 2]
+    # print hsv_image[:, 2]
     eq_soft_light_img = cv2.cvtColor(hsv_image, cv2.cv.CV_HSV2BGR)
 
     # global_resize = [resize_factor, resize_factor,
@@ -87,9 +89,9 @@ def main():
     # eq_r = cv2.equalizeHist(r)
 
     # eq_soft_light_img = cv2.merge((eq_b, eq_g, eq_r))
-    # cv2.imshow('image', soft_light_img)
     cv2.imwrite('output_soft.png', eq_soft_light_img)
-    # cv2.waitKey(0)
+    cv2.imshow('image', eq_soft_light_img)
+    cv2.waitKey(0)
 
 
     # print coef

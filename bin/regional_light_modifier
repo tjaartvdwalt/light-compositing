@@ -1,0 +1,34 @@
+#!/usr/bin/python2
+
+import sys
+from optparse import OptionParser
+
+from light_compositing import light_compositing
+
+
+def parse_opts():
+    usage = "usage: %prog [options] image"
+    parser = OptionParser(usage=usage)
+    parser.add_option("-b", "--beta", dest="beta", metavar="BETA", type="float", default=1,
+                      help="The beta value. This decides which areas will be empasized.")
+    parser.add_option("-o", "--output", dest="output", type="string", default="regional_light.png",
+                      metavar="OUTPUT", help="The output file name.")
+    parser.add_option("-v", "--verbose", dest="verbose", action="store_true",
+                      metavar="VERBOSE", help="Print debug information.")
+
+    (options, arguments) = parser.parse_args()
+    return (options, arguments)
+
+
+def main():
+    (options, arguments) = parse_opts()
+    if(len(arguments) == 0):
+        print("You need to supply an input image")
+        exit(1)
+    else:
+        image = arguments[0]
+
+    light_compositing.regional_modifier(image, options.output, options.beta, 
+                                        options.verbose)
+
+main()

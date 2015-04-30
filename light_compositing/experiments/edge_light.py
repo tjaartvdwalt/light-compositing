@@ -56,7 +56,8 @@ def edge_light(l):
 
 def main():
     for i in range(0, N):
-        img_name = "../test_data/small/%03d_small.png" % (i)
+        img_name = "../../../input_image/basket/images/%03d.png" % (i)
+        # img_name = "../test_data/small/%03d_small.png" % (i)
         img = cv2.imread(img_name)
         gray_image = cv2.cvtColor(img, cv2.cv.CV_BGR2GRAY)
         img_list.append(utils.normalize(gray_image))

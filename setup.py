@@ -1,5 +1,9 @@
 import os
+
 from setuptools import setup
+
+from light_compositing import __version__
+
 
 # Utility function to read the README file.
 # Used for the long_description.  It's nice, because now 1) we have a top level
@@ -10,14 +14,15 @@ def read(fname):
 
 setup(
     name = "light-compositing",
-    version = "0.0.1",
+    version = __version__,
     author = "Tjaart van der Walt",
-    author_email = "python@tjaart.co.za",
+    author_email = "pypi@tjaart.co.za",
     description = ("An implementation of a Light Compositing article (see Readme)"),
-    license = "MIT",
+    scripts=['bin/fill_light'],
+    packages=['light_compositing'],
+    license = "GNU-GPL",
     keywords = "light compositing",
     url = "https://github.com/tjaartvdwalt/light-compositing",
-    packages=['light-compositing'],
     long_description=read('README'),
     classifiers=[
         "Development Status :: 3 - Alpha",
