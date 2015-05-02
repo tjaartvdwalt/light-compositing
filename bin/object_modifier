@@ -30,12 +30,19 @@ def parse_opts():
 
 def main():
     (options, arguments) = parse_opts()
-    if(len(arguments) == 0):
-        directory = "."
-    else:
-        directory = arguments[0]
+    default_args = ["fill_light.png", "edge_light.png",
+                    "diffuse_color_light.png"]
+    args = []
+    
+    for argument in arguments:
+        args.append(argument)
 
-    light_compositing.object_modifier(directory, options.output, options.mask, options.fill,
-    options.edge, options.diffuse, options.count, options.verbose)
+    for argument in range(len(arguments), 3):
+        args.append(default_args)
+
+    light_compositing.object_modifier(args[0], args[1], args[2], options.output,
+                                      options.mask, options.fill, options.edge,
+                                      options.diffuse, options.count,
+                                      options.verbose)
 
 main()

@@ -4,15 +4,25 @@ import cv2
 
 
 class ModifierLights():
-    def __init__(self, image_list=None):
+    def __init__(self, image_list=None, verbose=False):
         """
         """
         self.image_list = image_list
+        self.verbose = verbose
 
-    def per_object(self):
+    def per_object(self, fill_image, edge_image, diffuse_image, mask_image,
+                   fill_weight, edge_weight, diffuse_weight):
         """
         """
-        pass
+        fill_object = fill_image * mask_image
+        edge_object = edge_image * mask_image
+        diffuse_object = diffuse_image * mask_image
+
+        sum_weights = fill_weight + edge_weight + diffuse_weight
+        ret_image = (fill_object * fill_weight) + (edge_object * edge_weight)
+        + (diffuse_object * diffuse_weight) / (3 * sum_weights)
+
+        return ret_image
 
     def soft(self, sigma):
         """

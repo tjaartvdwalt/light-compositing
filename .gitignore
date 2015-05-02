@@ -53,3 +53,6 @@ docs/_build/
 # PyBuilder
 target/
 /.ropeproject/
+
+# Ignore our test data dir
+test_data

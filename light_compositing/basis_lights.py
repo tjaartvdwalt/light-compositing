@@ -11,17 +11,18 @@ class BasisLights():
     SIGMA = 0.5
     EPSILON = 0.01
 
-    def __init__(self, image_list):
+    def __init__(self, image_list, verbose=False):
         """
         """
         self.image_list = image_list
+        self.verbose = verbose
 
     def fill(self, epsilon=0.01):
         """
         """
 
         # We get the size from the first image
-        # Image shape gets rows, cols and channels:
+        # Image shape is defined by (rows, cols, channels), see:
         # http://docs.opencv.org/trunk/doc/py_tutorials/py_core/py_basic_ops/py_basic_ops.html#accessing-image-properties
         img_shape = self.image_list[0].shape
 
@@ -30,8 +31,6 @@ class BasisLights():
         print img_shape
         div_array = np.ones(img_shape)
         div_array = div_array * len(self.image_list)
-        # div_array = np.ndarray(shape=img_shape, dtype=np.float32,
-        #                           buffer=)
 
         # Same shape as input images, but only 1 channel
         sum_weights = np.zeros((img_shape[0], img_shape[1], 1), np.float32)
@@ -42,14 +41,14 @@ class BasisLights():
             i_bar = np.dot(image, np.array([0.1140, 0.5870, 0.2990]))
             i_bar = np.reshape(i_bar, (i_bar.shape[0], i_bar.shape[1], 1))
             weights = i_bar/(i_bar + epsilon)
-            # print "weights %s" % weights
-            sum_weights += weights
+            if self.verbose:
+                print "weights %s" % weights
 
+            sum_weights += weights
             res = np.multiply(weights, image)
             sum_image += image
             sum_weights_image += res
 
-        # return sum_image/30
         return sum_weights_image/sum_weights
 
     def edge(self):
@@ -85,11 +84,9 @@ class BasisLights():
         return res
 
     def orientation_map(self, mag, ori, threshold=0.01):
-        # print(mag.shape)
         return_image = np.zeros_like(mag)
         rows = mag.shape[0]
         cols = mag.shape[1]
-        # channels = mag.shape[2]
 
         for r in range(rows):
             for c in range(cols):
@@ -133,13 +130,7 @@ class BasisLights():
                     if (pixel >= lower_bound) and (pixel < upper_bound):
                         if pixel > cur_val:
                             cur_val = pixel
-                # print "index of max value: %s, max val: %s " % (index, max)
-                # print "item (%s, %s) = %s" %(r, c, cur_val)
                 return_map.itemset(r, c, cur_val)
-                # print hist
-                # plt.plot(hist)
-                # plt.show()
-                # print(pixel_at_images)
         return return_map
 
     def gradient_map(self, images):
@@ -175,9 +166,6 @@ class BasisLights():
         return ret_image
 
     def angle(self, px1, px2):
-        # print np.linalg.norm(px1, ord=None)
-        # print np.linalg.norm(px2)
-
         if (px1[0] == 0) and (px1[1] == 0) and (px1[2] == 0):
             t1 = np.zeros(3)
         else:
