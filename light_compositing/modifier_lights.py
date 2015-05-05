@@ -18,18 +18,21 @@ class ModifierLights():
         edge_object = edge_image * mask_image
         diffuse_object = diffuse_image * mask_image
 
-        sum_weights = fill_weight + edge_weight + diffuse_weight
-        masked_obj = (fill_object * fill_weight) + (edge_object * edge_weight)
-        + (diffuse_object * diffuse_weight) / (3 * sum_weights)
+        masked_obj = (fill_object * fill_weight) / fill_weight
+        + (edge_object * edge_weight) / edge_weight
+        + (diffuse_object * diffuse_weight) / diffuse_weight
 
         inverse_mask = 1 - mask_image
         rest_image = inverse_mask * fill_image
-        alpha = 0.3
-        beta = 1.0 - alpha
-        # comb_image = cv2.addWeighted(masked_obj, alpha, rest_image, beta, 0.0)
-        # comb_image = masked_obj + rest_image
 
-        ret_image = cv2.bilateralFilter(comb_image, 5, 50, 50)
+        # alpha = 0.3
+        # beta = 1.0 - alpha
+        # comb_image = cv2.addWeighted(masked_obj, alpha, rest_image, beta, 0.0)
+
+        cv2.imshow('Object modifier', masked_obj)
+        cv2.waitKey(0)
+        ret_image = masked_obj + rest_image
+        # ret_image = cv2.bilateralFilter(comb_image, 5, 50, 50)
 
         return ret_image
 
@@ -37,6 +40,8 @@ class ModifierLights():
         """
         """
         coef = self.get_mixture_coefficients(sigma)
+        if self.verbose:
+            print "Mixture coefficients: %s" % (coef)
         soft_light_img = self.sum_lambda_int(coef)
         hsv_image = cv2.cvtColor(soft_light_img, cv2.cv.CV_BGR2HSV)
 

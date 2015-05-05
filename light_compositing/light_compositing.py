@@ -19,7 +19,7 @@ def avg_light(directory, output, count=-1, verbose=False):
     basis = basis_lights.BasisLights(img_list, verbose=verbose)
     res_image = basis.avg()
     cv2.imwrite(output, utils.denormalize_img(res_image))
-    cv2.imshow('Fill light', res_image)
+    cv2.imshow('Average light', res_image)
     cv2.waitKey(0)
 
 
@@ -105,8 +105,6 @@ def object_modifier(fill_light, edge_light, diffuse_light, output, mask,
     modifier = modifier_lights.ModifierLights(verbose=verbose)
     res_image = modifier.per_object(fill_image, edge_image, diffuse_image,
                                     mask_image, fill, edge, diffuse)
-    cv2.imwrite(output, utils.denormalize_img(res_image))
-    cv2.imshow('Object modifier', res_image)
     cv2.waitKey(0)
 
 

@@ -35,7 +35,6 @@ class BasisLights():
     def fill(self, epsilon=0.01):
         """
         """
-        self.EPSILON = epsilon
         # We get the size from the first image
         # Image shape is defined by (rows, cols, channels), see:
         # http://docs.opencv.org/trunk/doc/py_tutorials/py_core/py_basic_ops/py_basic_ops.html#accessing-image-properties
@@ -43,27 +42,28 @@ class BasisLights():
 
         sum_weights_image = np.zeros_like(self.image_list[0])
         sum_image = np.zeros_like(self.image_list[0])
-        div_array = np.ones(img_shape)
-        div_array = div_array * len(self.image_list)
+        # div_array = np.ones(img_shape)
+        # div_array = div_array * len(self.image_list)
 
         # Same shape as input images, but only 1 channel
         sum_weights = np.zeros((img_shape[0], img_shape[1], 1), np.float32)
         i_bar = np.zeros_like(sum_weights)
 
         for i, image in enumerate(self.image_list):
-            weights = np.zeros_like(self.image_list[0])
+            my_weights = np.zeros_like(self.image_list[0])
             i_bar = np.dot(image, np.array([0.1140, 0.5870, 0.2990]))
             i_bar = np.reshape(i_bar, (i_bar.shape[0], i_bar.shape[1], 1))
-            weights = i_bar/(i_bar + self.EPSILON)
-            if self.verbose:
-                print "weights %s" % weights
+            my_weights = i_bar/(i_bar + epsilon)
+            print my_weights
+            # if self.verbose:
+            #     print "weights %s" % weights
 
-            sum_weights += weights
-            res = np.multiply(weights, image)
+            sum_weights += my_weights
+            res = np.multiply(my_weights, image)
             sum_image += image
             sum_weights_image += res
 
-            return sum_weights_image/sum_weights
+        return sum_weights_image/sum_weights
 
     def edge(self):
         """

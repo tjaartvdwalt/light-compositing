@@ -29,7 +29,7 @@ def main():
     else:
         directory = arguments[0]
 
-    light_compositing.soft_modifier(directory, options.output, options.sigma,
-                                    options.count, options.verbose)
+    light_compositing.soft_modifier(directory, options.output, sigma=options.sigma,
+                                    count=options.count, verbose=options.verbose)
 
 main()

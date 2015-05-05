@@ -28,7 +28,7 @@ def main():
     else:
         image = arguments[0]
 
-    light_compositing.regional_modifier(image, options.output, options.beta,
-                                        options.verbose)
+    light_compositing.regional_modifier(image, options.output, beta=options.beta,
+                                        verbose=options.verbose)
 
 main()

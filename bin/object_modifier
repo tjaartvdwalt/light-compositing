@@ -13,11 +13,11 @@ def parse_opts():
                       metavar="COUNT", help="The number of images to use.")
     parser.add_option("-m", "--mask", dest="mask", type="string", default="mask.png",
                       metavar="MASK", help="The mask image that defines the object of interest.")
-    parser.add_option("-f", "--fill", dest="fill", default=1,
+    parser.add_option("-f", "--fill", dest="fill", type="float", default=1,
                       metavar="FILL", help="The weight of the fill light.")
-    parser.add_option("-e", "--edge", dest="edge", default=1,
+    parser.add_option("-e", "--edge", dest="edge", type="float", default=1,
                       metavar="EDGE", help="The weight of the edge light.")
-    parser.add_option("-d", "--diffuse", dest="diffuse", default=1,
+    parser.add_option("-d", "--diffuse", dest="diffuse", type="float", default=1,
                       metavar="DIFFUSE", help="The weight of the diffuse color light.")
     parser.add_option("-o", "--output", dest="output", type="string", default="per_object_light.png",
                       metavar="OUTPUT", help="The output file name.")
@@ -42,7 +42,7 @@ def main():
 
     light_compositing.object_modifier(args[0], args[1], args[2], options.output,
                                       options.mask, options.fill, options.edge,
-                                      options.diffuse, options.count,
-                                      options.verbose)
+                                      options.diffuse, count=options.count,
+                                      verbose=options.verbose)
 
 main()
