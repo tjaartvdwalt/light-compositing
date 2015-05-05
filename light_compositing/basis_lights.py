@@ -11,16 +11,31 @@ class BasisLights():
     SIGMA = 0.5
     EPSILON = 0.01
 
-    def __init__(self, image_list, verbose=False):
+    def __init__(self, image_list, downsampled=None, verbose=False):
         """
         """
         self.image_list = image_list
+        self.ds_image_list = downsampled
         self.verbose = verbose
+        self.gmap = None
+        self.weight = None
+
+    def avg(self):
+        """
+        """
+        sum = np.zeros_like(self.image_list[0])
+        shape = self.image_list[0].shape
+        count = np.full(shape, len(self.image_list))
+
+        for i, image in enumerate(self.image_list):
+            sum += image
+
+        return sum / count
 
     def fill(self, epsilon=0.01):
         """
         """
-
+        self.EPSILON = epsilon
         # We get the size from the first image
         # Image shape is defined by (rows, cols, channels), see:
         # http://docs.opencv.org/trunk/doc/py_tutorials/py_core/py_basic_ops/py_basic_ops.html#accessing-image-properties
@@ -28,7 +43,6 @@ class BasisLights():
 
         sum_weights_image = np.zeros_like(self.image_list[0])
         sum_image = np.zeros_like(self.image_list[0])
-        print img_shape
         div_array = np.ones(img_shape)
         div_array = div_array * len(self.image_list)
 
@@ -40,7 +54,7 @@ class BasisLights():
             weights = np.zeros_like(self.image_list[0])
             i_bar = np.dot(image, np.array([0.1140, 0.5870, 0.2990]))
             i_bar = np.reshape(i_bar, (i_bar.shape[0], i_bar.shape[1], 1))
-            weights = i_bar/(i_bar + epsilon)
+            weights = i_bar/(i_bar + self.EPSILON)
             if self.verbose:
                 print "weights %s" % weights
 
@@ -49,39 +63,65 @@ class BasisLights():
             sum_image += image
             sum_weights_image += res
 
-        return sum_weights_image/sum_weights
+            return sum_weights_image/sum_weights
 
     def edge(self):
         """
         """
-        count = len(self.image_list)
+        (self.gmap, self.weight) = self.gradient_map(self.ds_image_list)
+        lambdas = self.optimize(self.calc_edge_light)
+        ret_image = self.sum_images(lambdas, self.image_list)
 
-        x0 = np.ones(count + 1)
-        res = minimize(self.arg_min, x0, method='Nelder-Mead')
+        return ret_image
 
-        for i in range(count):
-            res[i] * self.image_list[i]
+    def calc_edge_light(self, l):
+        rows = self.ds_image_list[0].shape[0]
+        cols = self.ds_image_list[0].shape[1]
 
-    def edge_weight(self):
-        return 1
-
-    def arg_min(self, l):
-        rows = self.image_list[0].shape[0]
-        cols = self.image_list[0].shape[1]
-
-        gradient_map = self.gradient_map(self.image_list)
-
+        res = 0
         for r in range(rows):
             for c in range(cols):
-                # print "sum_lambda %s" % sum_lambda_int(l, r, c)
-                # print "gradient map %s" % (gradient_map**2)
-                # diff = np.gradient(sum_lambda_int(l, r, c))
-                # print diff
-                # gradient = np.arctan(diff[1]/diff[0]) * 180 / np.pi
                 gradient = self.sum_lambda_int(l, r, c)
-                res = self.edge_weight() * np.linalg.norm(
-                    gradient - (gradient_map.item(r, c)**2))**2
+                res += self.weight.item(r, c) * np.linalg.norm(
+                    gradient - (self.gmap.item(r, c)**2))**2
+
+        if self.verbose:
+            print "lambda: %s" % l
+            print "sum:    %s" % res
         return res
+
+    def optimize(self, my_function):
+        bnds = []
+        img_count = len(self.ds_image_list)
+        for i in range(img_count):
+            bnds.append((0, 1))
+
+        x0 = np.full(img_count, 1.0/img_count)
+        lambdas = minimize(my_function, x0, method='TNC', jac=False,
+                           bounds=bnds)
+
+        if self.verbose:
+            print lambdas.message
+            print "Final choice of lambdas = %s" % (lambdas.x)
+        return lambdas.x
+
+    def sum_images(self, l, images):
+        return_image = np.zeros_like(images[0])
+
+        for i, img in enumerate(images):
+            return_image += np.multiply(l[i], img)
+
+        return return_image
+
+    def sum_lambda_int(self, l, r, c):
+        sum = 0
+        i = 0
+        for img in self.ds_image_list:
+            px = img[r, c]
+            sum = l[i] * px
+            i += 1
+
+        return sum
 
     def orientation_map(self, mag, ori, threshold=0.01):
         return_image = np.zeros_like(mag)
@@ -90,80 +130,124 @@ class BasisLights():
 
         for r in range(rows):
             for c in range(cols):
-                # for channel in range(channels):
                 if mag.item(r, c) > threshold:
                     return_image.itemset(r, c,
                                          ori.item(r, c))
         return return_image
 
-    def calculate_gradient_histograms(self, gradient_maps):
-        return_map = np.zeros_like(gradient_maps[0])
-        shape = gradient_maps[0].shape
+    def calcHist(self, oris, mags):
+        bins = []
+        for i in range(37):
+            bins.append([])
+
+        for i, ori in enumerate(oris):
+            if(ori > 180):
+                val = ori - 180
+            else:
+                val = ori
+            index = int(val / 5)
+            bins[index].append((ori, mags[i]))
+        return bins
+
+    def get_max_index(self, bins):
+        max_value = 0
+        max_index = 0
+
+        for i, my_bin in enumerate(bins):
+            if len(my_bin) > max_value:
+                max_value = len(my_bin)
+                max_index = i
+
+        return max_index
+
+    def get_max_weight(self, bins):
+        max_index = self.get_max_index(bins)
+        max_value = len(bins[max_index])
+
+        total = 0
+        for i, bin in enumerate(bins):
+            total += len(bin)
+
+        return 1.0 * max_value / total
+
+    def get_max_mag_index(self, my_bin):
+        max_value = 0
+        max_index = 0
+        for i, value in enumerate(my_bin):
+            if value > max_value:
+                max_value = value
+                max_index = i
+
+        return max_index
+
+    def calc_gradient_map(self, gradient_maps):
+        shape = gradient_maps[0][0].shape
         rows = shape[0]
         cols = shape[1]
+        return_map = np.zeros((rows, cols))
+        weight_map = np.zeros((rows, cols))
 
         for r in range(rows):
             for c in range(cols):
-                i = 0
-                pixel_at_images = np.zeros_like(gradient_maps[0])
-                for im in gradient_maps:
-                    pixel_at_images.itemset(i, im.item(r, c))
-                    i += 1
-                hist = cv2.calcHist([pixel_at_images], [0], None, [36],
-                                    [0, 180])
+                ori_at_images = np.zeros((len(gradient_maps)),
+                                         dtype=np.float32)
+                mag_at_images = np.zeros((len(gradient_maps)),
+                                         dtype=np.float32)
+                for i, im in enumerate(gradient_maps[0]):
+                    ori_at_images.itemset(i, im[r][c])
 
-                max = 0
-                i = 0
-                index = 0
-                # print pixel_at_images
-                for val in hist:
-                    if val > max:
-                        max = val
-                        index = i
-                    i += 1
+                for i, im in enumerate(gradient_maps[1]):
+                    mag_at_images.itemset(i, im[r][c])
 
-                cur_val = 0
-                lower_bound = index * 5
-                upper_bound = (index + 1) * 5
+                hist = self.calcHist(ori_at_images, mag_at_images)
+                index = self.get_max_index(hist)
+                weight_map.itemset(r, c, self.get_max_weight(hist))
+                max_mag_index = self.get_max_mag_index(hist[index])
+                return_map.itemset(r, c, hist[index][max_mag_index][0])
 
-                for pixel in pixel_at_images:
-                    if (pixel >= lower_bound) and (pixel < upper_bound):
-                        if pixel > cur_val:
-                            cur_val = pixel
-                return_map.itemset(r, c, cur_val)
-        return return_map
+        return (return_map, weight_map)
 
     def gradient_map(self, images):
-        gradient_maps = []
-        for i in range(0, len(images)):
+        gmaps = []
+        for i, image in enumerate(images):
+            sx = cv2.Sobel(image, cv2.CV_32F, 1, 0, ksize=-1)
+            sy = cv2.Sobel(image, cv2.CV_32F, 0, 1, ksize=-1)
 
-            # convert images to grayscale
-            if len(images[0].shape) > 2:
-                gray_image = cv2.cvtColor(images[i], cv2.cv.CV_BGR2GRAY)
-            else:
-                gray_image = images[i]
-
-            sx = cv2.Sobel(gray_image, cv2.CV_32F, 1, 0, ksize=-1)
-            sy = cv2.Sobel(gray_image, cv2.CV_32F, 0, 1, ksize=-1)
-
-            # mag = cv2.magnitude(sx, sy)
+            mag = cv2.magnitude(sx, sy)
             ori = cv2.phase(sx, sy, angleInDegrees=True)
 
-            cv2.imshow('orientation', ori)
-            cv2.waitKey(0)
-            gradient_maps.append(ori)
+            gmaps.append((ori, mag))
 
-        return self.calculate_gradient_histograms(gradient_maps)
+        (gmap, weight) = self.calc_gradient_map(gmaps)
+        return (gmap, weight)
 
     def diffuse_color(self):
         """
         """
-        count = len(self.image_list)
-        x0 = np.full(count, 1.0/count)
-        lambdas = minimize(self.calc_diffuse_color, x0, method='Nelder-Mead')
-        ret_image = self.sum_images(lambdas)
+        lambdas = self.optimize(self.calc_diffuse_color)
+        ret_image = self.sum_images(lambdas, self.image_list)
 
         return ret_image
+
+    def calc_diffuse_color(self, l):
+        rows = self.ds_image_list[0].shape[0]
+        cols = self.ds_image_list[0].shape[1]
+
+        my_sum = 0
+        for r in range(rows):
+            for c in range(cols):
+                sum_lambda = self.sum_lambda_int(l, r, c)
+                angle1 = self.angle(sum_lambda, self.px_avg(r, c))
+                angle2 = self.angle(sum_lambda, self.W)
+                alpha = self.alpha(r, c)
+                inv_alpha = (1 - self.alpha(r, c))
+                w_hat = self.w_hat(l, r, c)
+                val = (alpha * angle1) - (inv_alpha * w_hat * angle2)
+                my_sum += np.dot(val, np.array([0.1140, 0.5870, 0.2990]))
+        if self.verbose:
+            print "lambda: %s" % l
+            print "sum:    %s" % my_sum
+        return my_sum
 
     def angle(self, px1, px2):
         if (px1[0] == 0) and (px1[1] == 0) and (px1[2] == 0):
@@ -188,58 +272,17 @@ class BasisLights():
                         (2*self.SIGMA**2))
 
     def px_avg(self, r, c):
-        channels = self.image_list[0].shape[2]
+        channels = self.ds_image_list[0].shape[2]
         sum = np.zeros(channels)
 
-        for img in self.image_list:
+        for img in self.ds_image_list:
             px = img[r, c]
             sum += px
 
         avg = np.ones(channels)
-        avg *= len(self.image_list)
+        avg *= len(self.ds_image_list)
         return sum / avg
 
-    def sum_images(self, l):
-        return_image = np.zeros_like(self.image_list[0])
-        i = 0
-        for img in self.image_list:
-            return_image += np.multiply(l.item(i), img)
-            i += 1
-
-        return return_image
-
-    def sum_lambda_int(self, l, r, c):
-        sum = 0
-        i = 0
-        for img in self.image_list:
-            px = img[r, c]
-            sum = l[i] * px
-            i += 1
-
-        return sum
-
     def w_hat(self, l, r, c):
-        return self.sum_lambda_int(l, r, c) / (self.sum_lambda_int(l, r, c) +
-                                               self.EPSILON)
-
-    def calc_diffuse_color(self, l):
-        rows = self.image_list[0].shape[0]
-        cols = self.image_list[0].shape[1]
-
-        sum = 0
-        for r in range(rows):
-            for c in range(cols):
-                sum_lambda = self.sum_lambda_int(l, r, c)
-                sum += self.alpha(r, c) * self.angle(
-                    sum_lambda, self.px_avg(r, c)) - (
-                        1 - self.alpha(r, c)) * self.w_hat(
-                            l, r, c) * self.angle(sum_lambda, self.W)
-
-        print "lambda: %s" % l
-        print "sum:    %s" % sum
-        return sum
-
-    # def fprime(self, x):
-    #     ones = np.ones_like(x)
-    #     y = np.subtract(x, ones)
-    #     return dx
+        sum_imgs = self.sum_lambda_int(l, r, c)
+        return sum_imgs / (sum_imgs + self.EPSILON)

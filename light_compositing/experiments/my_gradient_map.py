@@ -1,8 +1,9 @@
 #!/usr/bin/python2
+import math
+
 import numpy as np
 
 import cv2
-from matplotlib import pyplot as plt
 
 
 def orientation_map(mag, ori, threshold=0.01):
@@ -21,76 +22,102 @@ def orientation_map(mag, ori, threshold=0.01):
     return return_image
 
 
-def calculate_gradient_histograms(gradient_maps):
-    return_map = np.zeros_like(gradient_maps[0])
-    shape = gradient_maps[0].shape
+def calcHist(oris, mags):
+    bins = []
+    for i in range(37):
+        bins.append([])
+
+    for i, ori in enumerate(oris):
+        if(ori > 180):
+            val = ori - 180
+        else:
+            val = ori
+        index = int(val / 5)
+        bins[index].append((ori, mags[i]))
+    return bins
+
+
+def get_max_index(bins):
+    max_value = 0
+    max_index = 0
+
+    for i, bin in enumerate(bins):
+        if len(bin) > max_value:
+            max_value = len(bin)
+            max_index = i
+
+    return max_index
+
+
+def get_max_weight(bins):
+    max_index = get_max_index(bins)
+    max_value = len(bins[max_index])
+
+    total = 0
+    for i, bin in enumerate(bins):
+        total += len(bin)
+
+    return 1.0 * max_value / total
+
+
+def get_max_mag_index(my_bin):
+    max_value = 0
+    max_index = 0
+    for i, value in enumerate(my_bin):
+        if value > max_value:
+            max_value = value
+            max_index = i
+
+    return max_index
+
+
+def calculate_gradient_map(gradient_maps):
+    shape = gradient_maps[0][0].shape
     rows = shape[0]
     cols = shape[1]
+    return_map = np.zeros((rows, cols))
+    weight_map = np.zeros((rows, cols))
 
     for r in range(rows):
         for c in range(cols):
-            i = 0
-            pixel_at_images = np.zeros_like(gradient_maps[0])
-            for im in gradient_maps:
-                pixel_at_images.itemset(i, im.item(r, c))
-                i += 1
-            hist = cv2.calcHist([pixel_at_images], [0], None, [36], [0, 180])
+            ori_at_images = np.zeros((len(gradient_maps)), dtype=np.float32)
+            mag_at_images = np.zeros((len(gradient_maps)), dtype=np.float32)
+            for i, im in enumerate(gradient_maps[0]):
+                ori_at_images.itemset(i, im[r][c])
 
-            max = 0
-            i = 0
-            index = 0
-            # print pixel_at_images
-            for val in hist:
-                if val > max:
-                    max = val
-                    index = i
-                i += 1
+            for i, im in enumerate(gradient_maps[1]):
+                mag_at_images.itemset(i, im[r][c])
 
-            cur_val = 0
-            lower_bound = index * 5
-            upper_bound = (index + 1) * 5
+            hist = calcHist(ori_at_images, mag_at_images)
+            index = get_max_index(hist)
+            weight_map.itemset(r, c, get_max_weight(hist))
+            max_mag_index = get_max_mag_index(hist[index])
+            return_map.itemset(r, c, hist[index][max_mag_index][0])
 
-            for pixel in pixel_at_images:
-                if (pixel >= lower_bound) and (pixel < upper_bound):
-                    if pixel > cur_val:
-                        cur_val = pixel
-            # print "index of max value: %s, max val: %s " % (index, max)
-            # print "item (%s, %s) = %s" %(r, c, cur_val)
-            return_map.itemset(r, c, cur_val)
-            # print hist
-            # plt.plot(hist)
-            # plt.show()
-            # print(pixel_at_images)
-    return return_map
+    return (return_map, weight_map)
 
 
 def gradient_map(images):
-    gradient_maps = []
-    for i in range(0, len(images)):
-
-        # convert images to grayscale
-        if len(images[0].shape) > 2:
-            gray_image = cv2.cvtColor(images[i], cv2.cv.CV_BGR2GRAY)
-        else:
-            gray_image = images[i]
-
-        sx = cv2.Sobel(gray_image, cv2.CV_32F, 1, 0, ksize=-1)
-        sy = cv2.Sobel(gray_image, cv2.CV_32F, 0, 1, ksize=-1)
+    gmaps = []
+    for i, image in enumerate(images):
+        sx = cv2.Sobel(image, cv2.CV_32F, 1, 0, ksize=-1)
+        sy = cv2.Sobel(image, cv2.CV_32F, 0, 1, ksize=-1)
 
         mag = cv2.magnitude(sx, sy)
         ori = cv2.phase(sx, sy, angleInDegrees=True)
 
         # cv2.imshow('image', ori)
         # cv2.waitKey(0)
-        cv2.imshow('orientation', ori)
-        cv2.waitKey(0)
+        # cv2.imshow('orientation', ori)
+        # cv2.waitKey(0)
         # cv2.imshow('magnitude', mag)
         # cv2.waitKey(0)
 
         # ori_map = orientation_map(mag, ori)
         # # norm_ori = ori / 360.0
         # # norm_ori = ori * 255
-        gradient_maps.append(ori)
+        gmaps.append((ori, mag))
         # # print(ori_map)
 
-    return calculate_gradient_histograms(gradient_maps)
+    (gmap, weight) = calculate_gradient_map(gmaps)
+    return (gmap, weight)

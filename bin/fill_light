@@ -27,6 +27,7 @@ def main():
     else:
         directory = arguments[0]
 
-    light_compositing.fill_light(directory, options.output, options.count, options.verbose)
+    light_compositing.fill_light(directory, options.output, count=options.count,
+                                 verbose=options.verbose)
 
 main()

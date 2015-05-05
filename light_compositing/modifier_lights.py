@@ -19,8 +19,17 @@ class ModifierLights():
         diffuse_object = diffuse_image * mask_image
 
         sum_weights = fill_weight + edge_weight + diffuse_weight
-        ret_image = (fill_object * fill_weight) + (edge_object * edge_weight)
+        masked_obj = (fill_object * fill_weight) + (edge_object * edge_weight)
         + (diffuse_object * diffuse_weight) / (3 * sum_weights)
+
+        inverse_mask = 1 - mask_image
+        rest_image = inverse_mask * fill_image
+        alpha = 0.3
+        beta = 1.0 - alpha
+        # comb_image = cv2.addWeighted(masked_obj, alpha, rest_image, beta, 0.0)
+        # comb_image = masked_obj + rest_image
+
+        ret_image = cv2.bilateralFilter(comb_image, 5, 50, 50)
 
         return ret_image
 

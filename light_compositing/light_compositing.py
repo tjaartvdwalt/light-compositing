@@ -1,41 +1,26 @@
 #!/usr/bin/python2
-import os
-
 import basis_lights
 import cv2
 import image_utils as utils
 import modifier_lights
 
 
-def read_images(directory, count, normalize=True):
+def avg_light(directory, output, count=-1, verbose=False):
     """
-    A helper function that reads the images in a given directory
+    This function calculates the fill light of the images.
 
     Arguments:
     directory -- the directory where the images are located
     count     -- the number of imags to use for this calculation
-
-    Returns:
-    A list of NumPy ndarrays containing the image data
+    verbose   -- should we print debug info
     """
-    # If we do not specify how many images to use, we will use all images
-    if(count == -1):
-        count = len(os.listdir(directory))
 
-    img_list = []
-    for i in range(0, count):
-        img_name = "%s/%03d.png" % (directory, i)
-        img = cv2.imread(img_name)
-        if img is None:
-            print("Unable to read image: %s " % (img_name))
-            exit(1)
-        # Normalize images to range [0..1] so that we can more easily
-        # do calculations on them
-        if(normalize):
-            img = utils.normalize(img)
-        img_list.append(img)
-
-    return img_list
+    img_list = utils.read_images(directory, count)
+    basis = basis_lights.BasisLights(img_list, verbose=verbose)
+    res_image = basis.avg()
+    cv2.imwrite(output, utils.denormalize_img(res_image))
+    cv2.imshow('Fill light', res_image)
+    cv2.waitKey(0)
 
 
 def fill_light(directory, output, count=-1, verbose=False):
@@ -48,15 +33,15 @@ def fill_light(directory, output, count=-1, verbose=False):
     verbose   -- should we print debug info
     """
 
-    img_list = read_images(directory, count)
+    img_list = utils.read_images(directory, count)
     basis = basis_lights.BasisLights(img_list, verbose=verbose)
     res_image = basis.fill()
-    cv2.imwrite(output, utils.denormalize(res_image))
+    cv2.imwrite(output, utils.denormalize_img(res_image))
     cv2.imshow('Fill light', res_image)
     cv2.waitKey(0)
 
 
-def edge_light(directory, output, count=-1, verbose=False):
+def edge_light(directory, output, count=-1, downsample=0, verbose=False):
     """
     This function calculates the fill light of the images.
 
@@ -65,10 +50,18 @@ def edge_light(directory, output, count=-1, verbose=False):
     count     -- the number of imags to use for this calculation
     verbose   -- should we print debug info
     """
-    pass
+    img_list = utils.read_images(directory, count)
+    d_img_list = utils.read_images(directory, count, downsample=downsample,
+                                   gray=True)
+    basis = basis_lights.BasisLights(img_list, downsampled=d_img_list,
+                                     verbose=verbose)
+    res_image = basis.edge()
+    cv2.imwrite(output, utils.denormalize_img(res_image))
+    cv2.imshow('Edge light', res_image)
+    cv2.waitKey(0)
 
 
-def diffuse_light(directory, output, count=-1, verbose=False):
+def diffuse_light(directory, output, count=-1, downsample=0, verbose=False):
     """
     This function calculates the fill light of the images.
 
@@ -77,10 +70,12 @@ def diffuse_light(directory, output, count=-1, verbose=False):
     count     -- the number of imags to use for this calculation
     verbose   -- should we print debug info
     """
-    img_list = read_images(directory, count)
-    basis = basis_lights.BasisLights(img_list, verbose=verbose)
+    img_list = utils.read_images(directory, count)
+    d_img_list = utils.read_images(directory, count, downsample=downsample)
+    basis = basis_lights.BasisLights(img_list, verbose=verbose,
+                                     downsampled=d_img_list)
     res_image = basis.diffuse_color()
-    cv2.imwrite(output, utils.denormalize(res_image))
+    cv2.imwrite(output, utils.denormalize_img(res_image))
     cv2.imshow('Diffuse color light', res_image)
     cv2.waitKey(0)
 
@@ -101,15 +96,16 @@ def object_modifier(fill_light, edge_light, diffuse_light, output, mask,
     count         -- the number of imags to use for this calculation
     verbose       -- should we print debug info
     """
-    fill_image = utils.normalize(cv2.imread(fill_light))
-    edge_image = utils.normalize(cv2.imread(edge_light))
-    diffuse_image = utils.normalize(cv2.imread(diffuse_light))
-    mask_image = utils.normalize(cv2.imread(mask))
+    fill_image = utils.read_image(fill_light)
+    edge_image = utils.read_image(edge_light)
+    diffuse_image = utils.read_image(diffuse_light)
+    mask_image = utils.read_image(mask)
 
+    print fill_image
     modifier = modifier_lights.ModifierLights(verbose=verbose)
     res_image = modifier.per_object(fill_image, edge_image, diffuse_image,
                                     mask_image, fill, edge, diffuse)
-    cv2.imwrite(output, utils.denormalize(res_image))
+    cv2.imwrite(output, utils.denormalize_img(res_image))
     cv2.imshow('Object modifier', res_image)
     cv2.waitKey(0)
 
@@ -124,10 +120,10 @@ def soft_modifier(directory, output, sigma, count=-1, verbose=False):
     count     -- the number of imags to use for this calculation
     verbose   -- should we print debug info
     """
-    img_list = read_images(directory, count, normalize=False)
+    img_list = utils.read_images(directory, count, normalize=False)
     modifier = modifier_lights.ModifierLights(img_list, verbose=verbose)
     res_image = modifier.soft(sigma)
-    cv2.imwrite(output, utils.denormalize(res_image))
+    cv2.imwrite(output, res_image)
     cv2.imshow('Soft modifier', res_image)
     cv2.waitKey(0)
 
@@ -139,10 +135,9 @@ def regional_modifier(image_path, output, beta, verbose=False):
     Arguments:
     image   -- the image to apply the modifier to
     beta    -- determines which areas will be emphasized
-    count   -- the number of imags to use for this calculation
     verbose -- should we print debug info
     """
-    image = cv2.imread(image_path)
+    image = utils.read_image(image_path, normalize=False)
     modifier = modifier_lights.ModifierLights(verbose=verbose)
     res_image = modifier.regional(image, beta)
     cv2.imwrite(output, res_image)

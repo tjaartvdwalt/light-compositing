@@ -1,9 +1,4 @@
 * Intro
 This software package implements the ideas found in [[http://www.cs.cornell.edu/projects/light_compositing/][this]] article.
 
-* Required software
-- Python 2
-- OpenCV
-- PyObjects
-- Scikit-image http://scikit-image.org
-- Modular toolkit for Data Processing http://mdp-toolkit.sourceforge.net/ 
+

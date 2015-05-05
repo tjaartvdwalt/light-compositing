@@ -1,4 +1,5 @@
 import os
+from glob import glob
 
 from setuptools import setup
 
@@ -13,17 +14,17 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name = "light-compositing",
-    version = __version__,
-    author = "Tjaart van der Walt",
-    author_email = "pypi@tjaart.co.za",
-    description = ("An implementation of a Light Compositing article (see Readme)"),
-    scripts=['bin/fill_light'],
-    packages=['light_compositing'],
-    license = "GNU-GPL",
-    keywords = "light compositing",
-    url = "https://github.com/tjaartvdwalt/light-compositing",
-    long_description=read('README'),
+    name="light-compositing",
+    version=__version__,
+    author="Tjaart van der Walt",
+    author_email="pypi@tjaart.co.za",
+    description=("An implementation of a Light Compositing article (see the README for mor details)"),
+    scripts=glob("bin/*"),
+    packages=["light_compositing"],
+    license="MIT",
+    keywords="light compositing",
+    url="https://github.com/tjaartvdwalt/light-compositing",
+    long_description=read("README"),
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Topic :: Utilities",
