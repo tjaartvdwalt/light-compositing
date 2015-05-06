@@ -3,7 +3,7 @@ This software package is an implements of the ideas found in the paper [[http://
 
 This implementation is is alpha state, and contains some bugs, and possibly design flaws. Any pull requests will be gladly accepted by the author.
 
-For more details on the implementation you take a look at the [[report/light_composition.pdf][report]].
+For more details on the implementation you take a look at the [[report/light_composition_report.pdf][report]].
 
 ** Installation
 The easiest way to install the package is from the =Python Package Index=.
