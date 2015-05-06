@@ -96,15 +96,17 @@ def object_modifier(fill_light, edge_light, diffuse_light, output, mask,
     count         -- the number of imags to use for this calculation
     verbose       -- should we print debug info
     """
-    fill_image = utils.read_image(fill_light)
-    edge_image = utils.read_image(edge_light)
-    diffuse_image = utils.read_image(diffuse_light)
-    mask_image = utils.read_image(mask)
+    fill_image = utils.read_image(fill_light, normalize=True)
+    edge_image = utils.read_image(edge_light, normalize=True)
+    diffuse_image = utils.read_image(diffuse_light, normalize=True)
+    mask_image = utils.read_image(mask, normalize=True)
 
     print fill_image
     modifier = modifier_lights.ModifierLights(verbose=verbose)
     res_image = modifier.per_object(fill_image, edge_image, diffuse_image,
                                     mask_image, fill, edge, diffuse)
+    cv2.imwrite(output, utils.denormalize_img(res_image))
+    cv2.imshow('Object modifier', res_image)
     cv2.waitKey(0)
 
 

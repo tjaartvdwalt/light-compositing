@@ -18,9 +18,9 @@ class ModifierLights():
         edge_object = edge_image * mask_image
         diffuse_object = diffuse_image * mask_image
 
-        masked_obj = (fill_object * fill_weight) / fill_weight
-        + (edge_object * edge_weight) / edge_weight
-        + (diffuse_object * diffuse_weight) / diffuse_weight
+        masked_obj = ((fill_object * fill_weight) + (edge_object * edge_weight)
+                      + (diffuse_object * diffuse_weight)) / (
+                          fill_weight + edge_weight + diffuse_weight)
 
         inverse_mask = 1 - mask_image
         rest_image = inverse_mask * fill_image
@@ -29,8 +29,13 @@ class ModifierLights():
         # beta = 1.0 - alpha
         # comb_image = cv2.addWeighted(masked_obj, alpha, rest_image, beta, 0.0)
 
-        cv2.imshow('Object modifier', masked_obj)
-        cv2.waitKey(0)
+        if self.verbose:
+            cv2.imshow('Object', masked_obj)
+            cv2.waitKey(0)
+
+            cv2.imshow('Rest of the image', rest_image)
+            cv2.waitKey(0)
+
         ret_image = masked_obj + rest_image
         # ret_image = cv2.bilateralFilter(comb_image, 5, 50, 50)
 
