@@ -88,3 +88,11 @@ The regional light modifier takes an input image as argument instead of an input
 regional_light_modifier --beta 0 my_image.png
 #+end_src
 
+
+** Development
+We welcome contributions to the project. If you want to help out the easiest way is to contact the author, or simply send a pull request.
+
+The rest of this section gives developer guidelines. It will grow if we get more people involved.
+
+*** PyPI releases
+we use [[http://seed.readthedocs.org/en/latest/][seed]] to release our package to [[https://pypi.python.org/pypi][PyPI]]
