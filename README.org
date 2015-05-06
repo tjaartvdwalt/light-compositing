@@ -28,9 +28,9 @@ Currently our application does not contain a fully fledged graphical user interf
 
 The =test_data= used in the example commands can be downloaded from [[http://www.cs.cornell.edu/projects/light_compositing/download/light_compositing_input_data.zip][here]]. 
 *** Command line options and arguments
-Most of the scripts takes a =directory= argument. This is the directory where the input images are found. We assume that these images are named in the format =000.png ... xyz.png=. If no =--count= option is given, these image files should be the only images in the directory. [fn:13]
+Most of the scripts takes a =directory= argument. This is the directory where the input images are found. We assume that these images are named in the format =000.png ... xyz.png=. If no =--count= option is given, these image files should be the only images in the directory.
 
-Most of the scripts have a =--count= option, that  allows you to set how many of the input images should be used for the calculation.[fn:1].This is useful if you do not want to waste time doing calculations on all the input images. From the results in the paper it seems that setting =COUNT > 15= will yield good results in most cases.
+Most of the scripts have a =--count= option, that  allows you to set how many of the input images should be used for the calculation.This is useful if you do not want to waste time doing calculations on all the input images. From the results in the paper it seems that setting =COUNT > 15= will yield good results in most cases.
 
 All of the scripts have a =--verbose= option. Setting this option prints debug information.
 
@@ -77,13 +77,13 @@ object_modifier --mask test_data/basket_regions/corn.png \
 #+end_src
 
 **** Soft light modifier
-The soft light modifier has a =--sigma= option that defines the $\sigma$ value. This value controls how much a particular light is diffused as described in the implementation section.
+The soft light modifier has a =--sigma= option that defines the \sigma value. This value controls how much a particular light is diffused as described in the implementation section.
 #+begin_src bash
 soft_light_modifier --sigma 0.5 test_data/basket
 #+end_src
 
 **** Regional lighting modifier
-The regional light modifier takes an input image as argument instead of an input directory like most of the other lighting types. In addition it has a =--beta= option that defines the $\beta$ value. When this value is positive, it emphasizes the bright areas in the input image, and when it is negative it emphasizes dark areas in the input image.
+The regional light modifier takes an input image as argument instead of an input directory like most of the other lighting types. In addition it has a =--beta= option that defines the \beta value. When this value is positive, it emphasizes the bright areas in the input image, and when it is negative it emphasizes dark areas in the input image.
 #+begin_src bash
 regional_light_modifier --beta 0 my_image.png
 #+end_src
